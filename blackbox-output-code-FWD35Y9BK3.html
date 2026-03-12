@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AXION | Streetwear</title>
+    <style>
+        :root {
+            --primary: #111;
+            --accent: #ff4500;
+            --light: #f4f4f4;
+            --white: #fff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        
+        body { background-color: var(--light); color: var(--primary); }
+
+        /* Navigation */
+        nav {
+            background: var(--primary);
+            color: var(--white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo { font-size: 1.5rem; font-weight: bold; letter-spacing: 2px; }
+        .nav-links button {
+            background: none;
+            border: none;
+            color: var(--white);
+            margin-left: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+        .nav-links button:hover { color: var(--accent); }
+        .cart-count { background: var(--accent); padding: 2px 6px; border-radius: 50%; font-size: 0.8rem; }
+
+        /* Container */
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+
+        /* Sections */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Product Grid */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .product-card:hover { transform: translateY(-5px); }
+        
+        .product-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            background-color: #ddd;
+        }
+
+        .product-info { padding: 1rem; }
+        .product-title { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .product-price { color: var(--accent); font-weight: bold; font-size: 1.2rem; }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-danger { background: #d9534f; color: var(--white); }
+        .btn-success { background: #25D366; color: var(--white); } /* WhatsApp Green */
+
+        /* Admin Panel */
+        .admin-panel { background: var(--white); padding: 2rem; border-radius: 8px; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        .admin-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
+
+        /* Cart & Checkout */
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--white);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        .total-price { font-size: 1.5rem; text-align: right; margin-top: 1rem; }
+
+        /* Login Modal */
+        #login-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .login-box { background: var(--white); padding: 2rem; border-radius: 8px; text-align: center; }
+        .login-box input { padding: 10px; margin: 10px 0; width: 100%; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">AXION</div>
+        <div class="nav-links">
+            <button onclick="showSection('home')">Store</button>
+            <button onclick="showSection('cart')">Cart <span id="cart-count" class="cart-count">0</span></button>
+            <button onclick="openLogin()">Admin</button>
+        </div>
+    </nav>
+
+    <!-- Home / Store Section -->
+    <div id="home" class="section active container">
+        <h2 style="margin-bottom: 20px;">Latest Drops</h2>
+        <div class="product-grid" id="product-list">
+            <!-- Products injected here by JS -->
+        </div>
+    </div>
+
+    <!-- Cart Section -->
+    <div id="cart" class="section container">
+        <h2>Your Cart</h2>
+        <div id="cart-items">
+            <!-- Cart items injected here -->
+        </div>
+        <div class="total-price">Total: ₹<span id="cart-total">0.00</span></div>
+        <button class="btn btn-success" style="width: 200px; margin: 20px auto;" onclick="checkout()">Order on WhatsApp</button>
+    </div>
+
+    <!-- Admin Section -->
+    <div id="admin" class="section container">
+        <div class="admin-panel">
+            <h2>Admin Dashboard</h2>
+            <p style="margin-bottom: 20px;">Manage your inventory.</p>
+
+            <!-- Add Product Form -->
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3>Add New Product</h3>
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="new-name" placeholder="e.g. Axion Hoodie">
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" id="new-price" placeholder="e.g. 50">
+                </div>
+                <div class="form-group">
+                    <label>Upload Image</label>
+                    <input type="file" id="new-image" accept="image/*">
+                    <small style="color: #666;">*Note: Images are saved locally in your browser.</small>
+                </div>
+                <button class="btn btn-primary" onclick="addProduct()">Add Product</button>
+            </div>
+
+            <h3>Current Inventory</h3>
+            <div id="admin-product-list" class="product-grid">
+                <!-- Admin list injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal">
+        <div class="login-box">
+            <h3>Admin Login</h3>
+            <input type="password" id="admin-pass" placeholder="Enter Password">
+            <button class="btn btn-primary" onclick="checkLogin()">Login</button>
+            <button class="btn btn-danger" onclick="closeLogin()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & STATE ---
+        // Initial dummy data with placeholder images
+        const initialProducts = [
+            { id: 1, name: "Axion Oversized Tee", price: 35, image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=60" },
+            { id: 2, name: "Urban Cargo Pants", price: 65, image: "https://images.unsplash.com/photo-1517445312882-646783773223?auto=format&fit=crop&w=500&q=60" },
+            { id: 3, name: "Signature Cap", price: 25, image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=500&q=60" }
+        ];
+
+        // Load from LocalStorage or use Initial
+        let products = JSON.parse(localStorage.getItem('axion_products')) || initialProducts;
+        let cart = JSON.parse(localStorage.getItem('axion_cart')) || [];
+        let isAdmin = false;
+
+        // --- CORE FUNCTIONS ---
+
+        function saveData() {
+            localStorage.setItem('axion_products', JSON.stringify(products));
+            localStorage.setItem('axion_cart', JSON.stringify(cart));
+            renderProducts();
+            renderCart();
+            updateCartCount();
+        }
+
+        function updateCartCount() {
+            document.getElementById('cart-count').innerText = cart.length;
+        }
+
+        // --- NAVIGATION ---
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // --- PRODUCT LOGIC ---
+        function renderProducts() {
+            const list = document.getElementById('product-list');
+            const adminList = document.getElementById('admin-product-list');
+            
+            list.innerHTML = '';
+            adminList.innerHTML = '';
+
+            products.forEach(product => {
+                // Public View
+                const card = `
+                    <div class="product-card">
+                        <img src="${product.image}" class="product-img" alt="${product.name}">
+                        <div class="product-info">
+                            <div class="product-title">${product.name}</div>
+                            <div class="product-price">₹${product.price}</div>
+                            <button class="btn btn-primary" onclick="addToCart(${product.id})">Add to Cart</button>
+                        </div>
+                    </div>
+                `;
+                list.innerHTML += card;
+
+                // Admin View (with delete button)
+                const adminCard = `
+                    <div class="product-card">
+                        <img src="${product.image}" class="product-img" alt="${product.name}">
+                        <div class="product-info">
+                            <div class="product-title">${product.name}</div>
+                            <div class="product-price">₹${product.price}</div>
+                            <button class="btn btn-danger" onclick="deleteProduct(${product.id})">Remove Product</button>
+                        </div>
+                    </div>
+                `;
+                adminList.innerHTML += adminCard;
+            });
+        }
+
+        // Helper to convert file to Base64 string
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function addProduct() {
+            const name = document.getElementById('new-name').value;
+            const price = parseFloat(document.getElementById('new-price').value);
+            const fileInput = document.getElementById('new-image');
+
+            if (name && price) {
+                let imageSrc = "https://via.placeholder.com/300"; // Default image
+
+                // If a file is selected, convert it to Base64
+                if (fileInput.files && fileInput.files[0]) {
+                    try {
+                        imageSrc = await toBase64(fileInput.files[0]);
+                    } catch (e) {
+                        alert("Error reading image");
+                        return;
+                    }
+                }
+
+                const newProduct = {
+                    id: Date.now(), // Generate unique ID
+                    name: name,
+                    price: price,
+                    image: imageSrc
+                };
+                products.push(newProduct);
+                saveData();
+                
+                // Clear inputs
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-price').value = '';
+                document.getElementById('new-image').value = '';
+                alert('Product Added!');
+            } else {
+                alert('Please fill in name and price');
+            }
+        }
+
+        function deleteProduct(id) {
+            if(confirm('Are you sure you want to remove this item?')) {
+                products = products.filter(p => p.id !== id);
+                saveData();
+            }
+        }
+
+        // --- CART LOGIC ---
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            cart.push(product);
+            saveData();
+            alert(`${product.name} added to cart!`);
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            const totalEl = document.getElementById('cart-total');
+            
+            container.innerHTML = '';
+            let total = 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p>Your cart is empty.</p>';
+            } else {
+                cart.forEach((item, index) => {
+                    total += item.price;
+                    container.innerHTML += `
+                        <div class="cart-item">
+                            <div>
+                                <strong>${item.name}</strong><br>
+                                ₹${item.price}
+                            </div>
+                            <button class="btn btn-danger" style="width: auto; padding: 5px 10px;" onclick="removeFromCart(${index})">Remove</button>
+                        </div>
+                    `;
+                });
+            }
+            totalEl.innerText = total.toFixed(2);
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            saveData();
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                alert("Cart is empty!");
+                return;
+            }
+
+            // Calculate total
+            let total = 0;
+            let itemsList = "";
+            cart.forEach(item => {
+                total += item.price;
+                itemsList += `- ${item.name} (₹${item.price})%0a`;
+            });
+
+            // Owner's Phone Number
+            const phoneNumber = "9144268170";
+
+            // Create WhatsApp Message
+            const message = `*New Order from AXION Website*%0a%0a${itemsList}%0a*Total Amount: ₹${total}*%0a%0aPlease confirm my order.`;
+
+            // Open WhatsApp
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+            window.open(whatsappUrl, '_blank');
+
+            // Clear cart after order
+            cart = [];
+            saveData();
+        }
+
+        // --- ADMIN AUTH ---
+        function openLogin() {
+            document.getElementById('login-modal').style.display = 'flex';
+        }
+
+        function closeLogin() {
+            document.getElementById('login-modal').style.display = 'none';
+        }
+
+        function checkLogin() {
+            const pass = document.getElementById('admin-pass').value;
+            // HARDCODED PASSWORD: admin123
+            if (pass === 'admin123') {
+                isAdmin = true;
+                closeLogin();
+                showSection('admin');
+                document.getElementById('admin-pass').value = '';
+            } else {
+                alert('Incorrect Password');
+            }
+        }
+
+        // --- INITIALIZATION ---
+        renderProducts();
+        renderCart();
+
+    </script>
+</body>
+</html>
